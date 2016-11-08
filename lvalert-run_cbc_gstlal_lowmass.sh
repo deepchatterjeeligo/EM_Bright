@@ -1,2 +1,2 @@
 #!/bin/bash
-python ./sourceClassDriver.py ./configFile.ini
+python ./sourceClassDriver.py ./configFile.ini --logdir ./logs

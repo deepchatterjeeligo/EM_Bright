@@ -1,0 +1,5 @@
+*.json
+*.xml*
+*.dat
+*.txt
+*.pyc
