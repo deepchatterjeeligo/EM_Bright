@@ -8,6 +8,7 @@ from sys import exit
 import time as Time
 import datetime
 import ConfigParser
+import argparse
 
 import ligo.gracedb.rest
 from pylal import SnglInspiralUtils
@@ -60,27 +61,48 @@ def readCoinc(CoincFile):
 
 #########################################################################################
 
+### Parse Arguments ###
+argparser	= argparse.ArgumentParser(description = 'Mandatory and optional arguments to sourceClassDriver.py')
+argparser.add_argument('configfile', help = 'Path to config file', action = 'store')
+argparser.add_argument('--logdir', help = 'Directory path to store log files, created locally by default or if absent', default = './logs', action = 'store')
+argparser.add_argument('--gdbwrite', help = 'Flag to write to GraceDb', action = 'store_true', default = 'False')
+args		= argparser.parse_args()
 ### Reading information from config file ###
 configParser = ConfigParser.ConfigParser()
-configParser.read( sys.argv[1] )
-gracedb_url = configParser.get('gracedb', 'gracedb_url')
-coinc_path = configParser.get('Paths', 'coincPath') ## Where coinc files are to be stored
-psd_path = configParser.get('Paths', 'psdPath') ## Where psd files are to be stored
-source_class_path = configParser.get('Paths', 'results') ## Where the result .json file is saved
-log_path = configParser.get('Paths', 'logs')
-numTrials = int( configParser.get('Paths', 'numTrials') ) ## Number of trials to fetch the coinc files.
-wait = float( configParser.get('Paths', 'wait') ) ## Wait time between each trials
+try:
+	configParser.read(args.configfile)
+except IOError:
+	print 'Could not read/find config file. Exiting...'
+	sys.exit()
 
-ellipsoidSample = int( configParser.get('EMBright', 'elipsoidSample') ) ## Number of samples within ellipsoid on which the EM-Bright analysis will be conducted
-remMassThreshold = float( configParser.get('EMBright', 'remMassThreshold') ) 
-forced = configParser.getboolean('EMBright', 'Forced')
-write_text = configParser.getboolean('EMBright', 'writeText')
-f_low = float( configParser.get('EMBright', 'fmin') )
-mass1_cut = float( configParser.get('EMBright', 'mass1_cut') )
-chi1_cut = float( configParser.get('EMBright', 'chi1_cut') )
-lowMass_approx = configParser.get('EMBright', 'lowMass_approx')
-highMass_approx = configParser.get('EMBright', 'highMass_approx')
-tagnames = configParser.get('gracedb', 'tagnames').split() 
+gracedb_url	= configParser.get('gracedb', 'gracedb_url')
+coinc_path	= configParser.get('Paths', 'coincPath') ## Where coinc files are to be stored
+psd_path	= configParser.get('Paths', 'psdPath') ## Where psd files are to be stored
+source_class_path= configParser.get('Paths', 'results') ## Where the result .json file is saved
+# Specify the directory to log files
+if os.path.isdir(args.logdir):	# if the log directory exists
+	log_path = args.logdir
+else:				# try making the logdir
+	try:
+		os.mkdir(args.logdir)
+		log_path = args.logdir
+	except:
+		print 'Could not create logs directory. Check path. Exiting...'
+		sys.exit()
+
+numTrials	= int( configParser.get('Paths', 'numTrials') ) ## Number of trials to fetch the coinc files.
+wait		= float( configParser.get('Paths', 'wait') ) ## Wait time between each trials
+
+ellipsoidSample = int( configParser.get('EMBright', 'ellipsoidSample') ) ## Number of samples within ellipsoid on which the EM-Bright analysis will be conducted
+remMassThreshold= float( configParser.get('EMBright', 'remMassThreshold') )
+forced		= configParser.getboolean('EMBright', 'Forced')
+write_text	= configParser.getboolean('EMBright', 'writeText')
+f_low		= float( configParser.get('EMBright', 'fmin') )
+mass1_cut	= float( configParser.get('EMBright', 'mass1_cut') )
+chi1_cut	= float( configParser.get('EMBright', 'chi1_cut') )
+lowMass_approx	= configParser.get('EMBright', 'lowMass_approx')
+highMass_approx	= configParser.get('EMBright', 'highMass_approx')
+tagnames	= configParser.get('gracedb', 'tagnames').split() 
 
 '''
 Receives alerts from graceDB, obtains the required coinc and psd files and then launches
@@ -119,7 +141,7 @@ if streamdata['alert_type'] == 'new':
         log.writelines(str(datetime.datetime.today()) + '\t' + 'Successfully created results directory\n')
 
     except:
-        log.writelines(str(datetime.datetime.today()) + '\t' + 'Failed to creat coinc and/or psd and/or results directory, Check write privilege to the given path\n')
+        log.writelines(str(datetime.datetime.today()) + '\t' + 'Failed to create coinc and/or psd and/or results directory, Check write privilege to the given path\n')
         exit(1)
     
     for countTrials in xrange(numTrials): ### iterate a maximum of numTrials times
@@ -160,8 +182,10 @@ if streamdata['alert_type'] == 'new':
         log.writelines(str(datetime.datetime.today()) + '\t' + 'Return was NaNs\n')
         [NS_prob_2_sngl, em_bright_prob_sngl] = [0., 0.]
         message = 'EM-Bright probabilities computation failed for trigger + ' + graceid + '\n'
-
-        #gdb.writeLog(graceid, message, tagname='em_follow')
+	if args.gdbwrite:
+        	gdb.writeLog(graceid, message, tagname='em_follow')
+	else:
+		log.writelines(message)
         end = Time.time()
         log.writelines(str(datetime.datetime.today()) + '\t' + 'Time taken in computing EM-Bright probabilities = ' + str(end - start) + '\n')        
         exit(0)
@@ -185,7 +209,8 @@ if streamdata['alert_type'] == 'new':
     file_obj.write( json.dumps( {'Prob NS2':NS_prob_2_sngl, 'Prob EMbright':em_bright_prob_sngl} ) )
     file_obj.close()
 
-    #gdb.writeLog( graceid, message, filename=filename, tagname=tagnames )
+    if args.gdbwrite:
+    	gdb.writeLog( graceid, message, filename=filename, tagname=tagnames )
 
 #     gdb.writeLog(graceid, message, tagname=tagnames)
 
