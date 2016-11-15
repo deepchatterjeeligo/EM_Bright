@@ -167,17 +167,16 @@ if streamdata['alert_type'] == 'new':
         File.writelines(graceid + '\t' + str(mass1) + '\t' +  str(mass2) + '\t' + str(chi1) + '\t' + str(snr) + '\n')
         File.close()
 
-    samples_sngl = getSamples(graceid, mass1, mass2, chi1, snr, ellipsoidSample, {ifo + '=' + psd_path + '/psd_' + graceid + '.xml.gz'}, fmin=f_low, NMcs=10, NEtas=10, NChis=10, mass1_cut=mass1_cut, chi1_cut=chi1_cut, lowMass_approx=lowMass_approx, highMass_approx=highMass_approx, Forced=forced, logFile=logFileName, saveData=True)
+    samples_sngl, likelihood = getSamples(graceid, mass1, mass2, chi1, snr, ellipsoidSample, {ifo + '=' + psd_path + '/psd_' + graceid + '.xml.gz'}, fmin=f_low, NMcs=10, NEtas=10, NChis=10, mass1_cut=mass1_cut, chi1_cut=chi1_cut, lowMass_approx=lowMass_approx, highMass_approx=highMass_approx, Forced=forced, logFile=logFileName, saveData=True)
     log.writelines(str(datetime.datetime.today()) + '\t' + 'Created ambiguity ellipsoid samples\n')
 
     ### Currently NaNs are generated when the ellipsoid generation failed. This will be changed in subsequent version. ###
     if ~np.any( np.isnan(samples_sngl[0]) ): 
         diskMassObject_sngl = genDiskMassProbability.genDiskMass(samples_sngl, 'test', remMassThreshold)
         [NS_prob_1_sngl, NS_prob_2_sngl, diskMass_sngl] = diskMassObject_sngl.fromEllipsoidSample()
-        #em_bright_prob_sngl = np.sum((diskMass_sngl > 0.)*100./len(diskMass_sngl))
-        em_bright_prob_sngl = diskMassObject_sngl.computeEMBrightProb() # RE: Probability using new EM bright boundary
-	#NS_prob_1_sngl, NS_prob_2_sngl, em_bright_prob_sngl = diskMassObject_sngl.computeEMBrightProb()
-
+        prob = diskMassObject_sngl.computeEMBrightProb() # RE: Probability using new EM bright boundary
+        likelihood_br = likelihood[np.where(prob > 0.)] # KU
+        em_bright_prob_sngl = np.sum(likelihood_br) / np.sum(likelihood)
     else:
         log.writelines(str(datetime.datetime.today()) + '\t' + 'Return was NaNs\n')
         [NS_prob_2_sngl, em_bright_prob_sngl] = [0., 0.]

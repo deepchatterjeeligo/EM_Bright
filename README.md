@@ -19,6 +19,7 @@ Notes:
 
 4. Sample run command:
 
-lvalert_listen --user shaon.ghosh  --netrc /home/shaon/.netrc -c /home/shaon/ANALYSIS/EM_Bright/myLVAlertListen.ini  -r alertInstance &
+lvalert_listen --user shaon.ghosh  --netrc /home/shaon/.netrc -c myLVAlertListen.ini  -r alertInstance &
 
+lvalert_listen -c myLVAlertListen.ini -r alertInstance
 

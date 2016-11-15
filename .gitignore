@@ -3,3 +3,8 @@
 *.dat
 *.txt
 *.pyc
+*test*
+.gitignore
+ueno.sh
+!equil_2H.dat
+iReact.py

@@ -98,4 +98,4 @@ class genDiskMass:
 	'''
 	remMass = self.computeRemMass()
 	prob	= (self.mPrimary < self.max_ns_g_mass)*(self.mSecondary < self.max_ns_g_mass) + (remMass > self.threshold)
-	return 100.0*np.sum(prob > 0.) / len(prob)
+	return prob

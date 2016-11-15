@@ -220,6 +220,8 @@ def getSamples(graceid, mass1, mass2, chi1, network_snr, samples, PSD, fmin=30, 
     NN_total = 0
     cart_grid = [[0., 0., 0.]]
     sph_grid = [[0., 0., 0.]]
+    likelihood_grid = [1.] ## Koh Ueno added
+    
     while NN < Nrandpts:
         NN_total += 1
         r = np.random.rand()
@@ -235,21 +237,35 @@ def getSamples(graceid, mass1, mass2, chi1, network_snr, samples, PSD, fmin=30, 
         ### CHECK ####
         cart_grid_point = [x1, x2, x3]
         cart_grid_point = np.array(np.real( np.dot(rot, cart_grid_point)) )
-
+        
         rand_Mc = cart_grid_point[0] * lal.MSUN_SI + McSIG # Mc (kg)
         rand_eta = cart_grid_point[1] + etaSIG # eta
         rand_chi = cart_grid_point[2] + chiSIG
         ### CHECK ####
-
+        
+        ### Koh Ueno: I added the followings to introduce the correct weight for each sample.
+        ### I think we can do this computation only after "if joint_condition"
+        ### if you want to make the computational cost as small as possible.
+        ### I am wondering if we can use the modified "gam"
+        ###  (i.e., the gam which gam_prior is added to)
+        ### for the likelihood computation.
+        diff_rand_sample = [(rand_Mc - McSIG) / lal.MSUN_SI, rand_eta - etaSIG, rand_chi - chiSIG]
+        likelihood_tmp = np.dot( np.dot(gam, diff_rand_sample), diff_rand_sample)
+        likelihood = np.exp( -0.5 * network_snr**2 * likelihood_tmp.item(0) )
+        ### Koh Ueno: ends
+        
         condition1 = rand_eta > 0
         condition2 = rand_eta <= 0.25
         condition3 = np.abs(rand_chi) < 1.0
         joint_condition = condition1 * condition2 * condition3
         if joint_condition:
             cart_grid.append( [cart_grid_point[0], cart_grid_point[1], cart_grid_point[2]] ) ## CHECK
+            likelihood_grid.append(likelihood) ### Koh Ueno added
             NN += 1
     cart_grid = np.array(cart_grid)
     sph_grid = np.array(sph_grid)
+    likelihood_grid = np.array(likelihood_grid)
+    
     if logFile:
         log.writelines(str(datetime.datetime.today()) + '\t' + 'Selected ' + str(NN) + ' points from ' + str(NN_total) + ' random samples within the ellipsoid \n')
     else:
@@ -266,7 +282,7 @@ def getSamples(graceid, mass1, mass2, chi1, network_snr, samples, PSD, fmin=30, 
     rand_Mcs = rand_dMcs_MSUN * lal.MSUN_SI + McSIG # Mc (kg)
     rand_etas = rand_detas + etaSIG # eta
     rand_chis = rand_dChis + chiSIG
-
+    
     # Prune points with unphysical values of eta from cart_grid
     rand_etas = np.array(map(partial(lsu.sanitize_eta, exception=np.NAN), rand_etas))
     cart_grid = np.transpose((rand_Mcs,rand_etas,rand_chis)) #### CHECK ####
@@ -330,7 +346,7 @@ def getSamples(graceid, mass1, mass2, chi1, network_snr, samples, PSD, fmin=30, 
         if show:
             pl.show()
 
-    return outgrid
+    return outgrid, likelihood_grid # KU
 
 
 
