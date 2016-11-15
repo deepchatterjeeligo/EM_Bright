@@ -64,7 +64,7 @@ def readCoinc(CoincFile):
 ### Parse Arguments ###
 argparser	= argparse.ArgumentParser(description = 'Mandatory and optional arguments to sourceClassDriver.py')
 argparser.add_argument('configfile', help = 'Path to config file', action = 'store')
-argparser.add_argument('--logdir', help = 'Directory path to store log files, created locally by default or if absent', default = './logs', action = 'store') 
+argparser.add_argument('--logdir', help = 'Directory path to store log files, created locally by default or if absent', default = './logs', action = 'store')
 argparser.add_argument('--gdbwrite', help = 'Flag to write to GraceDb', action = 'store_true', default = 'False')
 args		= argparser.parse_args()
 ### Reading information from config file ###
@@ -94,7 +94,7 @@ numTrials	= int( configParser.get('Paths', 'numTrials') ) ## Number of trials to
 wait		= float( configParser.get('Paths', 'wait') ) ## Wait time between each trials
 
 ellipsoidSample = int( configParser.get('EMBright', 'ellipsoidSample') ) ## Number of samples within ellipsoid on which the EM-Bright analysis will be conducted
-remMassThreshold= float( configParser.get('EMBright', 'remMassThreshold') ) 
+remMassThreshold= float( configParser.get('EMBright', 'remMassThreshold') )
 forced		= configParser.getboolean('EMBright', 'Forced')
 write_text	= configParser.getboolean('EMBright', 'writeText')
 f_low		= float( configParser.get('EMBright', 'fmin') )
