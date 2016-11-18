@@ -65,7 +65,7 @@ def readCoinc(CoincFile):
 argparser	= argparse.ArgumentParser(description = 'Mandatory and optional arguments to sourceClassDriver.py')
 argparser.add_argument('configfile', help = 'Path to config file', action = 'store')
 argparser.add_argument('--logdir', help = 'Directory path to store log files, created locally by default or if absent', default = './logs', action = 'store')
-argparser.add_argument('--gdbwrite', help = 'Flag to write to GraceDb', action = 'store_true', default = 'False')
+argparser.add_argument('--gdbwrite', help = 'Flag to write to GraceDb', action = 'store_true', default = False)
 args		= argparser.parse_args()
 ### Reading information from config file ###
 configParser = ConfigParser.ConfigParser()
